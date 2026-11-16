@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.audit import AuditLog
-from app.auth import AuthStore
+from app.auth import DEMO_ACCOUNTS, AuthStore
 from app.rules import Entry, flag_entries, thresholds_plain
 from scripts.make_log import USERS
 
@@ -38,6 +38,7 @@ REPLAY_FAILS = 6
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)$")
 
 templates = Jinja2Templates(directory=APP_DIR / "templates")
+templates.env.globals["demo_accounts"] = DEMO_ACCOUNTS  # shown on the sign-in page
 
 
 # Production limits (env-overridable). They keep a public demo from being flooded.
@@ -198,7 +199,7 @@ state = State()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     state.log = SigninLog(read_csv(LOG_CSV))
-    state.auth = AuthStore.from_env()
+    state.auth = AuthStore.demo()
     state.audit = AuditLog()
     state.limiter = RateLimiter()
     yield

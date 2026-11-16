@@ -2,20 +2,19 @@
 
 The site itself needs no login. Every attempt on the sign-in demo page is added to
 the sign-in log so the flag rules can catch password guessing for real.
-Passwords are never logged or printed.
+The demo passwords are public on purpose (shown on the sign-in page) so anyone can try it.
+They are still hashed, and what people type is never logged.
 """
 
 import hashlib
 import hmac
-import os
 import secrets
 import threading
 import time
 from dataclasses import dataclass, field
 
-# Fake demo defaults, documented in the README. Override with env vars.
-DEFAULT_OWNER_PASSWORD = "owner-demo-pass"
-DEFAULT_EMPLOYEE_PASSWORD = "employee-demo-pass"
+# The fake demo accounts. Public on purpose: the sign-in page shows them.
+DEMO_ACCOUNTS = {"owner1": "1234", "employee1": "1234"}
 
 LOCKOUT_FAILS = 6                    # this many failed tries for one username...
 LOCKOUT_WINDOW_SECONDS = 600         # ...within 10 minutes...
@@ -56,10 +55,10 @@ class AuthStore:
     _dummy_salt: bytes = field(default_factory=lambda: secrets.token_bytes(16))
 
     @classmethod
-    def from_env(cls) -> "AuthStore":
+    def demo(cls) -> "AuthStore":
         store = cls()
-        store.add_account("owner1", os.environ.get("OWNER_PASSWORD", DEFAULT_OWNER_PASSWORD))
-        store.add_account("employee1", os.environ.get("EMPLOYEE_PASSWORD", DEFAULT_EMPLOYEE_PASSWORD))
+        for username, password in DEMO_ACCOUNTS.items():
+            store.add_account(username, password)
         return store
 
     def add_account(self, username: str, password: str) -> None:

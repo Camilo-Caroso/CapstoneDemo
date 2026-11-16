@@ -10,22 +10,17 @@ Everything is fake: the data, the people and the accounts. It runs on localhost 
 
 ```
 podman build -t login-triage .
-podman run --rm -p 8000:8000 -e OWNER_PASSWORD=... -e EMPLOYEE_PASSWORD=... login-triage
+podman run --rm -p 8000:8000 login-triage
 podman run --rm login-triage pytest -q
 ```
 
-Replace each `...` with a password of your choice, or drop the two `-e` flags to use the defaults below. Then open <http://127.0.0.1:8000>.
+Then open <http://127.0.0.1:8000>.
 
 > If `curl localhost:8000` gives "connection reset", use `127.0.0.1`. On Fedora, `localhost` tries IPv6 first and the app only listens on IPv4. Browsers fall back to IPv4 on their own.
 
 ## The sign-in demo accounts
 
-| Username | Password env var | Default if the env var is not set |
-|---|---|---|
-| `owner1` | `OWNER_PASSWORD` | `owner-demo-pass` |
-| `employee1` | `EMPLOYEE_PASSWORD` | `employee-demo-pass` |
-
-Passwords are never written to disk. At startup the app hashes them with scrypt and keeps only the hashes in memory.
+There are two fake accounts, `owner1` and `employee1`. Their passwords aren't secret: the **Sign-in demo** page shows them so anyone can try it. The app still hashes them with scrypt at startup and never logs what people type.
 
 - After **6 wrong tries in 10 minutes**, that username is locked for 10 minutes, even with the right password.
 - **Reset log** clears lockouts, so you don't have to wait mid-demo.
@@ -41,7 +36,7 @@ Other settings:
 2. **Press Replay attack.** Over about 7 seconds, six failed tries for Carla Nguyen appear one at a time, then the success arrives on top, flagged with "6 failed tries in a row, then success".
 3. **Submit a normal sign-in** with the "Try a sign-in" form: pick a user, type their usual city, leave the time blank and choose success. It's not flagged. For contrast, try `03:00` or `Lagos`.
 4. **Attack the real login.** Open the **Sign-in demo** tab:
-   1. Type `owner1` with a wrong password 5 times. Each try says "Added to the log as a failed sign-in".
+   1. Type `owner1` (password shown on the page) with a wrong password 5 times. Each try says "Added to the log as a failed sign-in".
    2. Type the right password. The page says it was **Flagged: 5 failed tries in a row, then success**. Click "See it in the log".
    3. Now type 6 wrong passwords. On the next try, even the right password is refused: "Too many failed tries".
 5. **Show Report** (6 of 6 planted caught, 0 false alarms, plus the rules in plain words) and **Audit** (every sign-in try, lockout and action, newest first). Press **Reset log** to clean up.
@@ -94,23 +89,15 @@ docker compose version   # check it works (run with sudo if needed)
 From your laptop, in the project folder (replace `you@server`):
 
 ```
-rsync -av --exclude .env --exclude __pycache__ ./ you@server:~/login-triage/
+rsync -av --exclude __pycache__ ./ you@server:~/login-triage/
 ```
 
-### 3. Set the passwords
+### 3. Build and start
 
 On the server:
 
 ```
 cd ~/login-triage
-cp .env.example .env
-chmod 600 .env
-vi .env          # set OWNER_PASSWORD and EMPLOYEE_PASSWORD
-```
-
-### 4. Build and start
-
-```
 sudo docker compose up -d --build
 sudo docker compose ps                    # STATUS should say "healthy" after ~10 s
 curl http://127.0.0.1:8081/healthz        # {"status":"ok"}
@@ -133,7 +120,7 @@ It's now at `http://<server-ip>:8081`. Docker opens the port itself, so firewall
 
 To put a reverse proxy (nginx, Caddy…) on the same server:
 1. In `compose.yaml`, change the port line to `"127.0.0.1:8081:8000"` so only the proxy can reach the app.
-2. Uncomment `FORWARDED_ALLOW_IPS=*` in `.env` so the rate limit sees real visitor IPs instead of the proxy's.
+2. Uncomment `FORWARDED_ALLOW_IPS: "*"` in `compose.yaml` so the rate limit sees real visitor IPs instead of the proxy's.
 3. Run `sudo docker compose up -d`.
 
 Don't set `FORWARDED_ALLOW_IPS` while 8081 is open to the internet: visitors could fake their IP and dodge the rate limit. On AlmaLinux with SELinux, nginx also needs `sudo setsebool -P httpd_can_network_connect 1` to reach the app.

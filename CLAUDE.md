@@ -27,7 +27,7 @@ data/planted.json      ground truth ids (only tests and /report read it)
 scripts/make_log.py    deterministic generator
 tests/test_rules.py, tests/test_interactive.py, tests/test_security.py
 Containerfile, requirements.txt, README.md
-compose.yaml, .env.example, .dockerignore   production deploy (Part 8)
+compose.yaml, .dockerignore   production deploy (Part 8)
 ```
 
 ## Part 1: The log (make_log.py -> data/signins.csv)
@@ -75,7 +75,7 @@ No jargon like "brute force" or "anomaly" in anything the user sees.
 
 ## Part 5: Sign-in demo (changed by the team: the site needs no login)
 - The whole site is open: no sessions, cookies, roles or 403s. There is nothing real to protect.
-- "Sign-in demo" is a tab in the top bar (`GET /login`, `POST /login`). It's a real login against two fake accounts, `owner1` and `employee1`. Passwords come from env vars `OWNER_PASSWORD` and `EMPLOYEE_PASSWORD`, with fake defaults documented in the README. Hashed with `hashlib.scrypt`. Never log or print passwords.
+- "Sign-in demo" is a tab in the top bar (`GET /login`, `POST /login`). It's a real login against two fake accounts, `owner1` and `employee1`, both with password `1234` (`DEMO_ACCOUNTS` in auth.py). The passwords are public on purpose: the sign-in page shows them, the README doesn't list them. Hashed with `hashlib.scrypt`. Never log what people type.
 - Every attempt, right or wrong, is added to the in-memory sign-in log (user = username typed, city "Localhost", marked injected) and goes through the same rules. owner1 and employee1 have home city "Localhost". The page shows whether that attempt got flagged and why.
 - Lockout: after 6 failed tries for one username within 10 minutes, reject all tries for that username for 10 minutes, even with the right password (429). Blocked tries are logged as failed sign-ins. 6, not 5, so that 5 wrong tries plus the right one shows the flag before the lock. Wrong username and wrong password return the same message. Reset log also clears lockouts.
 
@@ -90,7 +90,7 @@ No jargon like "brute force" or "anomaly" in anything the user sees.
 - /report reads planted.json. The flagging code in rules.py and the routes that flag entries must NOT read planted.json, otherwise the tests prove nothing.
 
 ## Part 8: Production (added by the team)
-- Deploy with Docker Compose (`compose.yaml`) on an AlmaLinux server, host port 8081 -> container port 8000. Passwords come from `.env` (copied from `.env.example`, chmod 600, never committed).
+- Deploy with Docker Compose (`compose.yaml`) on an AlmaLinux server, host port 8081 -> container port 8000. No .env needed; optional settings are commented in compose.yaml.
 - Container: read-only root filesystem, tmpfs /tmp, all capabilities dropped, no-new-privileges, 512 MB memory limit, healthcheck on /healthz, restart unless-stopped, rotated json logs. One container only (state is in memory).
 - App guards, all in memory and env-tunable:
   - rate limit of 30 POSTs per minute per client IP (`RATE_LIMIT_PER_MINUTE`) on /signins, /replay, /reset, /login; returns 429 and is audited
@@ -99,7 +99,7 @@ No jargon like "brute force" or "anomaly" in anything the user sees.
   - audit memory capped at 5,000 entries; /tmp/audit.log rotates to audit.log.1 at 5 MB
   - at most 4 scrypt hashes at once; lockout tracking pruned past 10,000 usernames
   - security headers on every response: strict CSP (no inline scripts or styles), X-Frame-Options DENY, nosniff, no-referrer
-- Behind a reverse proxy on the same host: publish `127.0.0.1:8081:8000` and set `FORWARDED_ALLOW_IPS=*` so the rate limit sees real IPs. Never set it while the port is public.
+- Behind a reverse proxy on the same host: publish `127.0.0.1:8081:8000` and set `FORWARDED_ALLOW_IPS: "*"` in compose.yaml so the rate limit sees real IPs. Never set it while the port is public.
 
 ## Tests
 tests/test_rules.py (unit):
@@ -122,7 +122,7 @@ tests/test_security.py (TestClient):
 - A correct password adds an unflagged success; a wrong one adds a failed row, returns 401 and is audited.
 - 5 wrong tries then the right password: that success is flagged "5 failed tries in a row, then success". 4 wrong then right is not.
 - 6 wrong tries then the correct password is rejected (lockout, 429) and logged as a failed row; it lifts after 10 minutes; Reset clears it.
-- Wrong username and wrong password give the same message. Password env vars override the defaults.
+- Wrong username and wrong password give the same message. The sign-in page shows both demo accounts with password 1234.
 - `/docs`, `/redoc`, `/openapi.json` return 404.
 - No route allows editing the audit log; audit file lines are JSON and never contain passwords.
 - Report numbers match the real data: all planted caught, 0 false positives, 0 decoys flagged; sign-in demo entries are ignored.
@@ -136,14 +136,14 @@ IMPORTANT: all tests must pass inside the container before anything is called do
 - README gives these exact commands:
 ```
 podman build -t login-triage .
-podman run --rm -p 8000:8000 -e OWNER_PASSWORD=... -e EMPLOYEE_PASSWORD=... login-triage
+podman run --rm -p 8000:8000 login-triage
 podman run --rm login-triage pytest -q
 ```
 - Local development: rootless Podman only. No sudo, no --privileged, no host network. If a volume is ever needed, use the `:Z` suffix.
 - Server: Docker Compose per Part 8 (Docker's daemon needs sudo there; the container itself still runs as a non-root user with all capabilities dropped).
 
 ## README must include
-- What it is, how to run it, the two fake demo accounts and how to set their passwords.
+- What it is, how to run it, and that the two fake demo accounts' passwords are shown on the sign-in page (don't list them in the README).
 - Demo script for Zoom: (1) show the flagged log, (2) press Replay attack and watch the flag appear, (3) submit a normal sign-in and show it isn't flagged, (4) on the Sign-in demo tab, guess owner1's password 5 times then enter it and show the flag, then show the lockout, (5) show /report and /audit, (6) show the passing tests.
 - How to deploy on AlmaLinux with Docker Compose on port 8081.
 - Known limits: no login on the site itself (anyone who can reach it can use every page, including Reset), plain HTTP unless a proxy adds HTTPS, everything is lost on restart, one container only, fixed-threshold rules, fake data and fake accounts only, anyone with access to the container can edit the audit file.

@@ -2,7 +2,14 @@
 {% block title %}Sign-in demo · Login-Log Triage{% endblock %}
 {% block content %}
 <h1>Sign-in demo</h1>
-<p class="lead">A real sign-in form. Every try, right or wrong, is added to the log and checked by the same rules. Try a wrong password a few times, then the right one. The demo accounts are <code>owner1</code> and <code>employee1</code> (passwords in the README).</p>
+<p class="lead">A real sign-in form. Every try, right or wrong, is added to the log and checked by the same rules. Try a wrong password 5 times, then the right one, and watch it get flagged.</p>
+
+<table class="scores creds">
+  <thead><tr><th>Demo account</th><th>Password</th></tr></thead>
+  <tbody>
+    {% for name, pw in demo_accounts.items() %}<tr><td><code>{{ name }}</code></td><td><code>{{ pw }}</code></td></tr>{% endfor %}
+  </tbody>
+</table>
 
 {% if message %}
 <div class="result {{ 'ok' if ok else 'bad' }}" role="status">

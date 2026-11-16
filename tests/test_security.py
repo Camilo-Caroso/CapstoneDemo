@@ -5,7 +5,6 @@ fed into the sign-in log, so the flag rules catch password guessing for real.
 """
 
 import json
-import os
 import re
 from pathlib import Path
 
@@ -14,11 +13,11 @@ from fastapi.testclient import TestClient
 
 import app.audit
 import app.main
-from app.auth import DEFAULT_EMPLOYEE_PASSWORD, DEFAULT_OWNER_PASSWORD
+from app.auth import DEMO_ACCOUNTS
 from app.main import app as fastapi_app, state
 
-OWNER_PW = os.environ.get("OWNER_PASSWORD", DEFAULT_OWNER_PASSWORD)
-EMPLOYEE_PW = os.environ.get("EMPLOYEE_PASSWORD", DEFAULT_EMPLOYEE_PASSWORD)
+OWNER_PW = DEMO_ACCOUNTS["owner1"]
+EMPLOYEE_PW = DEMO_ACCOUNTS["employee1"]
 ROW = re.compile(r'<tr data-id="(\d+)"( class="flagged")?>(.*?)</tr>', re.S)
 CSV_COUNT = 51
 
@@ -171,11 +170,13 @@ def test_unknown_username_locks_the_same_way(client):
     assert login(client, "nobody", "nope").status_code == 429
 
 
-def test_password_env_vars_are_used(monkeypatch, audit_file):
-    monkeypatch.setenv("OWNER_PASSWORD", "custom-owner-pw")
-    with TestClient(fastapi_app) as c:
-        assert login(c, "owner1", DEFAULT_OWNER_PASSWORD).status_code == 401
-        assert login(c, "owner1", "custom-owner-pw").status_code == 200
+def test_demo_passwords_are_1234_and_shown_on_sign_in_page(client):
+    assert DEMO_ACCOUNTS == {"owner1": "1234", "employee1": "1234"}
+    html = client.get("/login").text
+    for name in DEMO_ACCOUNTS:
+        assert f"<code>{name}</code></td><td><code>1234</code>" in html
+    assert login(client, "owner1", "1234").status_code == 200
+    assert login(client, "employee1", "1234").status_code == 200
 
 
 # --- docs and audit log --------------------------------------------------------
