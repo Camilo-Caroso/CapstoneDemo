@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Report · Login-Log Triage{% endblock %}
+{% block content %}
+<h1>Detection report</h1>
+<p class="lead">How well the rules do on the original made-up log. Sign-ins added during the demo are not counted.</p>
+
+<table class="scores">
+  <tr><th>Planted suspicious sign-ins caught</th><td id="planted-caught">{{ planted_caught }} of {{ planted_total }}</td></tr>
+  <tr><th>Normal sign-ins wrongly flagged</th><td id="false-positives">{{ false_positives }} of {{ normal_total }}</td></tr>
+  <tr><th>Decoys wrongly flagged</th><td id="decoys-flagged">{{ decoys_flagged }} of {{ decoys_total }}</td></tr>
+</table>
+
+<h2>What the rules look for</h2>
+<ul>{% for t in thresholds %}<li>{{ t }}</li>{% endfor %}</ul>
+
+<h2>Planted sign-ins</h2>
+<table>
+  <thead><tr><th>Time</th><th>User</th><th>City</th><th>Caught?</th></tr></thead>
+  <tbody>
+    {% for r in planted_rows %}
+    <tr{% if r.reasons %} class="flagged"{% endif %}>
+      <td class="nowrap">{{ r.time }}</td><td>{{ r.user }}</td><td>{{ r.city }}</td>
+      <td class="flag">{% if r.reasons %}<strong>Yes</strong><ul class="reasons">{% for x in r.reasons %}<li>{{ x }}</li>{% endfor %}</ul>{% else %}<strong>Missed</strong>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if false_positive_rows %}
+<h2>Normal sign-ins that were flagged</h2>
+<ul>{% for r in false_positive_rows %}<li>{{ r.time }}, {{ r.user }}: {{ r.reasons|join("; ") }}</li>{% endfor %}</ul>
+{% endif %}
+{% endblock %}

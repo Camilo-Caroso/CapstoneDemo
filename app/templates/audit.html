@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Audit · Login-Log Triage{% endblock %}
+{% block content %}
+<h1>Audit log</h1>
+<p class="lead">Every sign-in to this app, page view and action, newest first. Entries can't be edited or deleted.</p>
+<table>
+  <thead><tr><th>Time</th><th>Username</th><th>Route</th><th>Action</th><th>Result</th></tr></thead>
+  <tbody>
+    {% for a in entries %}
+    <tr data-audit><td class="nowrap">{{ a.timestamp }}</td><td>{{ a.username }}</td><td>{{ a.route }}</td><td>{{ a.action }}</td><td>{{ a.result }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

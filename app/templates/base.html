@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Login-Log Triage{% endblock %}</title>
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false, "responseHandling": [{"code": "204", "swap": false}, {"code": "429", "swap": true}, {"code": "[23]..", "swap": true}, {"code": "[45]..", "swap": false, "error": true}, {"code": "...", "swap": false}]}'>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+  <header>
+    <span class="brand">Login-Log Triage</span>
+    <nav>
+      <a href="/">Log</a>
+      <a href="/login">Sign-in demo</a>
+      <a href="/report">Report</a>
+      <a href="/audit">Audit</a>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

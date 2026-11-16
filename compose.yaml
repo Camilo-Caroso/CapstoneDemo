@@ -1,0 +1,36 @@
+# Login-Log Triage: production compose file.
+#   cp .env.example .env && chmod 600 .env   # then set real passwords in .env
+#   docker compose up -d --build
+# The app listens on port 8000 inside the container; it's published on host port 8081.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: login-triage:latest
+    container_name: login-triage
+    restart: unless-stopped
+    ports:
+      # Open to the network. If you put a reverse proxy on this same server, change this to
+      # "127.0.0.1:8081:8000" and set FORWARDED_ALLOW_IPS=* in .env (see README).
+      - "8081:8000"
+    env_file: .env
+    read_only: true          # app files can't be changed at runtime
+    tmpfs:
+      - /tmp:size=64m        # the only writable place: the audit file lives here
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    pids_limit: 200
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

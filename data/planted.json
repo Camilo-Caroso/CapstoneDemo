@@ -1,0 +1,22 @@
+{
+  "suspicious": {
+    "new_city": 12,
+    "six_fails_then_success": 28,
+    "odd_hour_0312": 29,
+    "five_fails_then_success": 49,
+    "odd_hour_0440": 50,
+    "combo": 51
+  },
+  "decoys": {
+    "typo": [
+      1,
+      2
+    ],
+    "early_0605": [
+      9
+    ],
+    "late_2230": [
+      38
+    ]
+  }
+}

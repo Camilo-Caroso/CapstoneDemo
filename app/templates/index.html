@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Sign-in log review</h1>
+<p class="lead">Last week's sign-ins for the team. Entries that look suspicious are flagged, with the reason next to them.</p>
+
+<section class="panel">
+  <h2>Try a sign-in</h2>
+  <form class="try" hx-post="/signins" hx-target="#log-table" hx-swap="outerHTML">
+    <label>User
+      <select name="user">
+        {% for email, u in users.items() %}<option value="{{ email }}">{{ u.name }} ({{ u.home_city }})</option>{% endfor %}
+      </select>
+    </label>
+    <label>City <input name="city" required maxlength="60" placeholder="e.g. Miami"></label>
+    <label>Time <input name="time" placeholder="HH:MM, blank = now" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" size="18"></label>
+    <label>Result
+      <select name="result"><option value="success">success</option><option value="fail">fail</option></select>
+    </label>
+    <button type="submit" class="primary">Add sign-in</button>
+  </form>
+  <div class="actions">
+    <button type="button" hx-post="/replay" hx-target="#log-table" hx-swap="outerHTML">Replay attack</button>
+    <button type="button" hx-post="/reset" hx-target="#log-table" hx-swap="outerHTML">Reset log</button>
+  </div>
+</section>
+
+<div class="filters">
+  <button type="button" id="btn-all" hx-get="/table?filter=all" hx-target="#log-table" hx-swap="outerHTML">All</button>
+  <button type="button" id="btn-flagged" hx-get="/table?filter=flagged" hx-target="#log-table" hx-swap="outerHTML">Flagged only</button>
+</div>
+
+{% include "_table.html" %}
+{% endblock %}

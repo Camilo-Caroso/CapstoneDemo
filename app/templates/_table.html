@@ -1,0 +1,30 @@
+<div id="log-table"{% if replaying %} hx-get="/table?filter={{ filter }}" hx-trigger="every 1s" hx-swap="outerHTML"{% endif %}>
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  {% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+  <p class="summary">{{ total }} sign-ins, {{ flagged_count }} flagged</p>
+  <p class="showing">
+    {% if filter == "flagged" %}Showing flagged sign-ins only ({{ rows|length }}){% else %}Showing all sign-ins ({{ rows|length }}), newest first{% endif %}{% if replaying %} · replay in progress…{% endif %}
+  </p>
+  <table>
+    <thead>
+      <tr><th>Time</th><th>User</th><th>City</th><th>Device</th><th>Result</th><th>Flag</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr data-id="{{ r.id }}"{% if r.reasons %} class="flagged"{% endif %}>
+        <td class="nowrap">{{ r.time }}</td>
+        <td>{{ r.user }}</td>
+        <td>{{ r.city }}</td>
+        <td>{{ r.device }}</td>
+        <td class="nowrap">{% if r.result == "success" %}Signed in{% else %}Failed{% endif %}</td>
+        <td class="flag">
+          {% if r.reasons %}
+          <strong>Flagged</strong>
+          <ul class="reasons">{% for reason in r.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

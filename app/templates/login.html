@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Sign-in demo · Login-Log Triage{% endblock %}
+{% block content %}
+<h1>Sign-in demo</h1>
+<p class="lead">A real sign-in form. Every try, right or wrong, is added to the log and checked by the same rules. Try a wrong password a few times, then the right one. The demo accounts are <code>owner1</code> and <code>employee1</code> (passwords in the README).</p>
+
+{% if message %}
+<div class="result {{ 'ok' if ok else 'bad' }}" role="status">
+  <p><strong>{{ message }}</strong></p>
+  <p>Added to the log as sign-in #{{ entry_id }} ({{ "success" if ok else "failed" }}).
+    {% if reasons %}It was <strong class="flag-word">Flagged</strong>:{% else %}It was not flagged.{% endif %}</p>
+  {% if reasons %}<ul class="reasons">{% for r in reasons %}<li>{{ r }}</li>{% endfor %}</ul>{% endif %}
+  <p><a href="/">See it in the log</a></p>
+</div>
+{% elif error %}
+<p class="error" role="alert">{{ error }}</p>
+{% endif %}
+
+<form method="post" action="/login" class="login">
+  <label>Username <input name="username" value="{{ username or '' }}" autocomplete="off" required maxlength="64"></label>
+  <label>Password <input name="password" type="password" autocomplete="off"></label>
+  <button type="submit" class="primary">Sign in</button>
+</form>
+{% endblock %}
